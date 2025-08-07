@@ -12,23 +12,23 @@
    - *Geographic Bias: There will be some unpredictable factors that alter the result, which decreases the validity of the study, namely the focus of bridges in one location, Georgia. Specific features of Georgia may play a large role in our results.*
    - *Algorithmic Bias: It may ignore outliers, misjudge whether or not it is a linear relationship,  and may ignore multiple factors that influence the outcome.*
 - *Evaluated four distinct modeling approaches: Random Forest, XGBoost, CatBoost, and a soft-voting Ensemble of all three.*
-   - *XGBoost was selected as the final champion model. While the Ensemble model achieved a slightly higher F1-score for the "Poor" class, XGBoost was chosen for its significantly superior and unmatched 90% Recall*
+   - *XGBoost was selected as the final champion model. While the Ensemble model achieved a slightly higher F1-score for the "Poor" class, XGBoost was chosen for its significantly superior 88% Recall*
 - *Final XGBoost SHAP analysis*
    - *Class 0: Poor, Class 1: Fair, Class 2: Good*
-   - *Bridge Age, Operating Rating, and Inventory Rating were identified as the most significant predictors of structural condition*
-     ![*SHAP summary*](./results/shap_final_xg.png)
+   - *Bridge Age and bridge roadway width curb to curb were identified as the most significant predictors of structural condition*
+     ![*SHAP summary*](./results/shap_final.png)
 
 ## Methodologies <!--- do not change this line -->
 
-- *Feature Engineering: Automated feature selection with RFECV and created interaction/non-linear features*
+- Feature Engineering: *Automated feature selection with RFECV; created interaction and non-linear features*
 
-- *Class Imbalance: Handled using SMOTE and Class Weighting*
+- Class Imbalance Handling: *Applied SMOTE and class weighting*
 
-- *Hyperparameter Tuning: Optimized models using Optuna (Bayesian Optimization)*
+- Hyperparameter Tuning: *Optimized models using Optuna (Bayesian Optimization)*
 
-- *Model Interpretability: Explained model predictions using SHAP*
+- Model Interpretability: *Explained model predictions using SHAP visualizations*
 
-- *Model Deployment: Deployed the final model as an interactive web application*
+- Model Deployment: *Deployed the final model as an interactive web app using Streamlit, hosted on Render → [Live Demo](https://bridgesense-demo.onrender.com/)*
 
 ## Data Sources <!--- do not change this line -->
 
@@ -40,7 +40,7 @@
 
 - ML Libraries: *XGBoost, CatBoost, Imbalanced-learn, Optuna, SHAP*
 
-- Deployment & Tools: *Colab, Streamlit, Joblib, VS Code, Git, Git LFS*
+- Deployment & Tools: *Colab, Streamlit, Render, Joblib, VS Code, Git, Git LFS*
 
 - Visualization: *Matplotlib, Seaborn*
 
