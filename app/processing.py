@@ -2,7 +2,7 @@
 Processing module for BridgeSense Streamlit application.
 
 This module loads the list of expected model columns and defines
-`transform_data` for preprocessing user input. It handles missing
+`transform_data` for preprocessing user input. Further handles missing
 values by imputing medians or setting missing flags for specific
 features. It also computes engineered features (interaction terms) to
 mirror the training pipeline.
@@ -78,14 +78,12 @@ def transform_data(input_data: dict) -> pd.DataFrame:
     Transform raw user input into a DataFrame aligned with model
     expectations.
 
-    Parameters
-    ----------
+    Parameters:
     input_data : dict
         Dictionary of user inputs where keys are feature names and values
         may be strings, numeric values, or blank (None or empty string).
 
-    Returns
-    -------
+    Returns:
     pd.DataFrame
         A single‑row DataFrame with engineered features and one‑hot
         encoded categorical variables, aligned with the order of
@@ -96,7 +94,7 @@ def transform_data(input_data: dict) -> pd.DataFrame:
     # length explicitly.
     if model_columns is None or len(model_columns) == 0:
         raise FileNotFoundError(
-            "Model columns not loaded. Ensure 'app/columns.joblib' is present."
+            "Model columns not loaded. Ensure the file with filepath 'app/columns.joblib' is present."
         )
 
     # Copy the input to avoid mutating the original dictionary.
@@ -145,5 +143,6 @@ def transform_data(input_data: dict) -> pd.DataFrame:
     # simple list of column names.
     columns_list = list(model_columns)
     df_final = df_encoded.reindex(columns=columns_list, fill_value=0)
+
 
     return df_final
