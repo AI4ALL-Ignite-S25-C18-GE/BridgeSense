@@ -1,32 +1,29 @@
 """
 Streamlit application for predicting bridge condition ratings.
 
-This version provides dropdown menus for categorical variables and
-descriptive labels with units for numeric fields.  When fields are
+This app has dropdown menus for categorical variables and
+descriptive labels with units for numeric fields. When fields are
 left blank, median imputation and missing flags are handled in
 processing.py.
 """
 
 import streamlit as st
 import joblib
+import os
 
-# Import transform_data from the processing module inside the `app` package.
-# This ensures we use the correct preprocessing logic that loads
-# column definitions from app/columns.joblib and avoids ambiguity.
-from app.processing import transform_data  # type: ignore
+from processing import transform_data  # type: ignore
+
+DIR = os.path.dirname(__file__)
+MODEL_PATH = os.path.join(DIR, "bridge_risk_model.joblib")
+COLUMNS_PATH = os.path.join(DIR, "columns.joblib")
+BOXPLOT_PATH = os.path.join(DIR, "age_condition_boxplot.png")
+SHAP_PATH = os.path.join(DIR, "shap_feature_importance.png")
 
 
 @st.cache_resource
 def load_model_and_columns():
-    """Load the trained model and column names from joblib files in the app directory.
-
-    The model and its associated column definitions reside in the
-    `app` subdirectory.  Columns may be stored as a pandas Index or other
-    iterable; converting them to a list avoids ambiguity when used in
-    boolean expressions or set operations.
-    """
-    model = joblib.load("app/bridge_risk_model.joblib")
-    columns_raw = joblib.load("app/columns.joblib")
+    model = joblib.load(MODEL_PATH)
+    columns_raw = joblib.load(COLUMNS_PATH)
     try:
         columns = list(columns_raw)
     except TypeError:
@@ -39,7 +36,6 @@ label_map = {0: "Poor", 1: "Fair", 2: "Good"}
 
 
 def build_input_form():
-    """Render the user input form with units and category options."""
     st.sidebar.header("Bridge Details")
     st.sidebar.markdown(
         "Fill in the details below. Units are noted in parentheses; "
@@ -48,171 +44,47 @@ def build_input_form():
 
     form = st.sidebar.form("bridge_form")
 
-    # Year Built (numeric year)
-    year_built = form.text_input(
-        "27 - Year Built (year)",
-        placeholder="e.g. 1985"
-    )
-    # Average Daily Traffic (vehicles)
-    adt = form.text_input(
-        "29 - Average Daily Traffic (vehicles/day)",
-        placeholder="Enter number"
-    )
-    # Main Span Material (category)
-    # Allow a blank selection for categorical options by prepending an empty
-    # string.  Streamlit selectbox requires a default selection, so the
-    # empty string acts as “no selection” and will trigger median
-    # imputation for categorical variables (handled in processing.py via
-    # one-hot encoding and column alignment).
-    material_options = [
-        "",  # blank option
-        "Concrete",
-        "Steel",
-        "Prestressed Concrete",
-        "Timber",
-        "Masonry",
-        "Aluminum",
-        "Other",
-    ]
-    main_span_material = form.selectbox(
-        "43A - Main Span Material", material_options, index=0
-    )
-    # Main Span Design (category)
-    design_options = [
-        "",  # blank option
-        "Girder",
-        "Truss - Through",
-        "Truss - Deck",
-        "Slab",
-        "Arch",
-        "Suspension",
-        "Cable-Stayed",
-        "Culvert",
-        "Other",
-    ]
-    main_span_design = form.selectbox(
-        "43B - Main Span Design", design_options, index=0
-    )
-    # Number of Spans in Main Unit
-    num_spans = form.text_input(
-        "45 - Number of Spans in Main Unit",
-        placeholder="Enter number"
-    )
-    # Structure Length (feet)
-    structure_length = form.text_input(
-        "49 - Structure Length (ft.)",
-        placeholder="Enter length in feet"
-    )
-    # Bridge Age (years)
-    bridge_age = form.text_input(
-        "Bridge Age (yr)",
-        placeholder="Enter age in years"
-    )
-    # Deck Area (square feet)
-    deck_area = form.text_input(
-        "CAT29 - Deck Area (sq. ft.)",
-        placeholder="Enter area in sq. ft."
-    )
-    # Year Reconstructed
-    year_reconstructed = form.text_input(
-        "106 - Year Reconstructed (year)",
-        placeholder="Enter year"
-    )
-    # Skew Angle (degrees)
-    skew_angle = form.text_input(
-        "34 - Skew Angle (degrees)",
-        placeholder="Enter degrees"
-    )
-    # Length of Maximum Span (feet)
-    max_span_length = form.text_input(
-        "48 - Length of Maximum Span (ft.)",
-        placeholder="Enter length in feet"
-    )
-    # Bridge Roadway Width Curb to Curb (feet)
-    roadway_width = form.text_input(
-        "51 - Bridge Roadway Width Curb to Curb (ft.)",
-        placeholder="Enter width in feet"
-    )
-    # Designated Inspection Frequency (months or cycles)
-    inspection_freq = form.text_input(
-        "91 - Designated Inspection Frequency (months)",
-        placeholder="Enter months"
-    )
-    # Operating Rating (US tons)
-    operating_rating = form.text_input(
-        "64 - Operating Rating (US tons)",
-        placeholder="Enter tons"
-    )
-    # Inventory Rating (US tons)
-    inventory_rating = form.text_input(
-        "66 - Inventory Rating (US tons)",
-        placeholder="Enter tons"
-    )
-    # Year of Average Daily Traffic
-    year_adt = form.text_input(
-        "30 - Year of Average Daily Traffic (year)",
-        placeholder="Enter year"
-    )
-    # Average Daily Truck Traffic (Percent ADT)
-    pct_truck = form.text_input(
-        "109 - Average Daily Truck Traffic (Percent of ADT)",
-        placeholder="Enter percent"
-    )
-    # Future Average Daily Traffic
-    future_adt = form.text_input(
-        "114 - Future Average Daily Traffic (vehicles/day)",
-        placeholder="Enter number"
-    )
-    # Year of Future Average Daily Traffic
-    year_future_adt = form.text_input(
-        "115 - Year of Future Average Daily Traffic (year)",
-        placeholder="Enter year"
-    )
-    # Total Project Cost (currency unspecified)
-    project_cost = form.text_input(
-        "96 - Total Project Cost (USD)",
-        placeholder="Enter cost"
-    )
-    # Computed Average Daily Truck Traffic (Volume)
-    computed_truck = form.text_input(
-        "Computed - Average Daily Truck Traffic (Volume)",
-        placeholder="Enter number"
-    )
-    # Average Relative Humidity (percent)
-    avg_rel_humidity = form.text_input(
-        "Average Relative Humidity (%)",
-        placeholder="Enter percent"
-    )
-    # Average Temperature (°F)
-    avg_temp = form.text_input(
-        "Average Temperature (°F)",
-        placeholder="Enter temperature"
-    )
-    # Maximum Temperature (°F)
-    max_temp = form.text_input(
-        "Maximum Temperature (°F)",
-        placeholder="Enter temperature"
-    )
-    # Minimum Temperature (°F)
-    min_temp = form.text_input(
-        "Minimum Temperature (°F)",
-        placeholder="Enter temperature"
-    )
-    # Mean Wind Speed (mph)
-    mean_wind_speed = form.text_input(
-        "Mean Wind Speed (mph)",
-        placeholder="Enter speed"
-    )
-    # Was Reconstructed (yes/no) with blank option
-    was_reconstructed_options = ["", "No", "Yes"]
-    was_reconstructed = form.selectbox(
-        "Was_Reconstructed", was_reconstructed_options, index=0
-    )
+    def make_text_input(label):
+        return form.text_input(label, placeholder="")
+
+    def make_selectbox(label, options):
+        return form.selectbox(label, [""] + options, index=0)
+
+    year_built = make_text_input("27 - Year Built (year)")
+    adt = make_text_input("29 - Average Daily Traffic (vehicles/day)")
+    main_span_material = make_selectbox("43A - Main Span Material", [
+        "Concrete", "Steel", "Prestressed Concrete", "Timber", "Masonry", "Aluminum", "Other"
+    ])
+    main_span_design = make_selectbox("43B - Main Span Design", [
+        "Girder", "Truss - Through", "Truss - Deck", "Slab", "Arch", "Suspension", "Cable-Stayed", "Culvert", "Other"
+    ])
+    num_spans = make_text_input("45 - Number of Spans in Main Unit")
+    structure_length = make_text_input("49 - Structure Length (ft.)")
+    bridge_age = make_text_input("Bridge Age (yr)")
+    deck_area = make_text_input("CAT29 - Deck Area (sq. ft.)")
+    year_reconstructed = make_text_input("106 - Year Reconstructed (year)")
+    skew_angle = make_text_input("34 - Skew Angle (degrees)")
+    max_span_length = make_text_input("48 - Length of Maximum Span (ft.)")
+    roadway_width = make_text_input("51 - Bridge Roadway Width Curb to Curb (ft.)")
+    inspection_freq = make_text_input("91 - Designated Inspection Frequency (months)")
+    operating_rating = make_text_input("64 - Operating Rating (US tons)")
+    inventory_rating = make_text_input("66 - Inventory Rating (US tons)")
+    year_adt = make_text_input("30 - Year of Average Daily Traffic (year)")
+    pct_truck = make_text_input("109 - Average Daily Truck Traffic (Percent of ADT)")
+    future_adt = make_text_input("114 - Future Average Daily Traffic (vehicles/day)")
+    year_future_adt = make_text_input("115 - Year of Future Average Daily Traffic (year)")
+    project_cost = make_text_input("96 - Total Project Cost (USD)")
+    computed_truck = make_text_input("Computed - Average Daily Truck Traffic (Volume)")
+    avg_rel_humidity = make_text_input("Average Relative Humidity (%)")
+    avg_temp = make_text_input("Average Temperature (°F)")
+    max_temp = make_text_input("Maximum Temperature (°F)")
+    min_temp = make_text_input("Minimum Temperature (°F)")
+    mean_wind_speed = make_text_input("Mean Wind Speed (mph)")
+    was_reconstructed = make_selectbox("Was_Reconstructed", ["No", "Yes"])
 
     submit = form.form_submit_button("Predict")
 
     if submit:
-        # Helper to convert string inputs to floats if possible
         def to_float_or_none(val: str):
             if val in (None, ""):
                 return None
@@ -255,25 +127,19 @@ def build_input_form():
 
 
 def main():
-    """Main function to run the Streamlit app."""
     st.title("BridgeSense Condition Prediction")
-    # Display the project overview and training results at the top of
-    # the page.  This ensures that the purpose of the project and key
-    # training insights are visible even before the form is filled out.
     show_training_overview()
 
     user_input = build_input_form()
     if not user_input:
-        # If the user hasn't submitted the form, return early.  The
-        # overview has already been displayed above.
         return
+
     try:
         df_transformed = transform_data(user_input)
     except Exception as exc:
         st.error(f"Preprocessing failed: {exc}")
         return
 
-    # Align columns to model
     missing_cols = set(model_columns) - set(df_transformed.columns)
     for col in missing_cols:
         df_transformed[col] = 0
@@ -294,20 +160,18 @@ def main():
     st.write("### Class Probabilities")
     st.table(proba_dict)
 
-    # The overview is shown at the top of the page, so we don't need
-    # to show it again here.
-
 
 def show_training_overview():
-    """Display the project purpose and training results with images."""
     st.markdown("---")
     st.header("Project Purpose and Training Results")
     st.write(
         """
         **Project Objective**
+
         This project's goal is to predict if a bridge in Georgia will receive 
         a **Poor**, **Fair**, or **Good** condition rating using available NBI 
         features such as traffic, environmental factors, and construction material. 
+
         Given that a poor rating indicates serious problems that may lead to 
         failure in the near future, this prediction provides critical insight 
         that can be used proactively to take active measures and avoid collapse, 
@@ -316,27 +180,15 @@ def show_training_overview():
         **Key Training Insights**
 
         To train the model, we used features describing traffic,
-        structural dimensions, age, and environmental conditions.  An
+        structural dimensions, age, and environmental conditions. An
         XGBoost classifier was chosen for its strong performance on
-        imbalanced data.  We also engineered interaction features, such
+        imbalanced data. We also engineered interaction features, such
         as the product of bridge age and truck traffic volume, to
         capture nonlinear relationships.
         """
     )
-    # Show the boxplot illustrating the distribution of bridge age by
-    # condition.  Older bridges tend to receive poorer ratings, but
-    # overlap exists across all classes.
-    st.image(
-        "app/age_condition_boxplot.png",
-        caption="Distribution of bridge age grouped by condition rating",
-        use_container_width=True,
-    )
-    # Show SHAP feature importance plot for the final model.
-    st.image(
-        "app/shap_feature_importance.png",
-        caption="SHAP Feature Importance for the Final Model",
-        use_container_width=True,
-    )
+    st.image(BOXPLOT_PATH, caption="Distribution of bridge age grouped by condition rating", use_container_width=True)
+    st.image(SHAP_PATH, caption="SHAP Feature Importance for the Final Model", use_container_width=True)
 
 
 if __name__ == "__main__":
